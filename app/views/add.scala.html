@@ -1,0 +1,61 @@
+@main("The Pincubator -> Add Pins") {
+
+<h1>New pins? Boom, I'll look after them</h1>
+
+<div class="container">
+    <form class="form-horizontal" style="width: 100%">
+        <div class="control-group">
+            <label class="control-label" for="pins">Pins:</label>
+            <div class="controls">
+                <textarea rows="20" id="pins" placeholder="Enter some pin numbers here (1 per line)" style="width: 100%"></textarea>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="tags">Tags:</label>
+            <div class="controls">
+                <input type="text" id="tags" data-provide="typeahead" placeholder="Enter some tags here" style="width: 100%" />
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label" for="note">Note:</label>
+            <div class="controls">
+                <textarea rows="3" id="note" placeholder="Enter a note to be displayed with these pins" style="width: 100%"></textarea>
+            </div>
+        </div>
+        <button type="button" id="addButton" onclick="postData()" class="btn">Add pins</button>
+
+        <div class="alert alert-success" id="successMessage" style="display: none">
+            Ace, I've remembered those pins!
+        </div>
+        <div class="alert alert-error" id="errorMessage" style="display: none">
+            Oops, I had trouble saving those pins :'(
+        </div>
+    </form>
+</div>
+
+<script>
+
+    function disableAddButton() {
+        $('#addButton').prop('disabled', true);
+    }
+
+    function onSuccess() {
+        $('#successMessage').show('slow', disableAddButton);
+    }
+
+    function postData() {
+        $.ajax({
+        type: 'POST',
+        url: '/save',
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify({ "tags": $('#tags').val(), "pins": $('#pins').val(), "note": $('#note').val() }),
+        success: onSuccess
+        });
+    }
+
+    $(document).ready(function() {
+        $('#tags').tagsInput({ autocomplete_url: 'tags', width: '100%', defaultText: 'Enter tags' });
+    });
+</script>
+
+}
