@@ -1,4 +1,4 @@
-@(title: String)(content: Html)
+@(title: String, page:String)(content: Html)
 
 <!DOCTYPE html>
 
@@ -38,9 +38,9 @@
                     <a class="brand" href="/">PINCUBATOR</a>
                     <div class="nav-collapse collapse">
                         <ul class="nav">
-                            <li class="active"><a href="/">Home</a></li>
-                            <li><a href="#about">Grab Pins</a></li>
-                            <li><a href="add">Add Pins</a></li>
+                            <li@if(page == "home"){ class="active"}><a href="/">Home</a></li>
+                            <li@if(page == "grab"){ class="active"}><a href="grab">Grab Pins</a></li>
+                            <li@if(page == "add"){ class="active"}><a href="add">Add Pins</a></li>
                         </ul>
                     </div><!--/.nav-collapse -->
                 </div>

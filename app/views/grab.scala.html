@@ -1,8 +1,24 @@
-@main("The Pincubator -> Grab Pins") {
+@main("The Pincubator -> Grab Pins", "grab") {
+
+<!-- Modal -->
+<div id="continueAnyway" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">Continue to next pin?</h3>
+    </div>
+    <div class="modal-body">
+        <p>You have <b>not</b> marked this pin as redeemed.</p>
+        <p>If you have redeemed this pin, please mark it as redeemed before continuing. This helps us give fresh data to everybody!</p>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Go Back</button>
+        <button class="btn btn-primary" data-dismiss="modal" onclick="savePin()">Continue</button>
+    </div>
+</div>
 
 <div class="container">
 
-    <h1>Want pins? Sure</h1>
+    <h1>What type of pin would you like?</h1>
 
     <div class="accordion" id="criteria">
         <div class="accordion-group">
@@ -15,17 +31,17 @@
                 <div class="accordion-inner">
                     <form class="form-horizontal">
                         <div class="control-group">
-                            <label class="control-label" for="tags">Matching tags:</label>
+                            <label class="control-label" for="searchTags">Matching tags:</label>
                             <div class="controls">
-                                <input type="text" id="tags" data-provide="typeahead" placeholder="Enter some tags here" style="width: 100%" />
+                                <input type="text" id="searchTags" data-provide="typeahead" placeholder="Enter some tags here" style="width: 100%" />
                             </div>
                         </div>
                         <div class="control-group">
                             <label class="control-label">Redemption status:</label>
                             <div class="controls">
                                 <div class="btn-group" data-toggle="buttons-radio">
-                                    <button type="button" class="btn btn-primary">Unredeemed</button>
-                                    <button type="button" class="btn btn-primary">Redeemed</button>
+                                    <button type="button" class="btn btn-primary" id="unredeemedButton" onclick="setRedeemedThenGrab(false)">Unredeemed</button>
+                                    <button type="button" class="btn btn-primary" id="redeemedButton" onclick="setRedeemedThenGrab(true)">Redeemed</button>
                                 </div>
                             </div>
                         </div>
@@ -35,19 +51,127 @@
         </div>
     </div>
 
-    <div class="hero-unit center">
-        <div id="pin" onclick="selectText('pin')"><h1>MSUCCESS3MO</h1></div>
-        <p>blackhawk, integration, 3-month</p>
-        <p>Imported 1/1/2012</p>
-        <button type="button" class="btn btn-warning">Skip this pin</button>
-        <button type="button" class="btn btn-success">Mark as redeemed</button>
+    <div class="hero-unit center" id="currentPin" style="display: none">
+        <span onclick="selectText('pin')"><h1 id="pin">MSUCCESS3MO</h1></span>
+        <input type="text" id="pinTags" data-provide="typeahead" placeholder="Enter some tags here" style="width: 100%" />
+        <textarea rows="3" id="note" placeholder="Enter a note to be displayed with these pins" style="width: 100%">Imported 1/1/2012</textarea>
+        <label class="checkbox">
+            <input type="checkbox" id="pinRedeemed"> Redeemed
+        </label>
+        <button type="button" class="btn btn-success" onclick="warnOrSave()">Save &amp; Get next pin</button>
     </div>
 
 </div>
 
 <script>
+    var currentPin = null;
+    var redeemedPins = false;
+
+    function displayCurrentPin() {
+        var el = $('#currentPin');
+
+        if (currentPin == null) {
+            requestTags();
+            el.hide('slow');
+            return;
+        }
+
+        var setContents = function () {
+            $('#pin').text(currentPin.pin);
+            $('#note').val(currentPin.note);
+            $('#pinRedeemed').prop('checked', redeemedPins);
+        };
+
+        if (el.is(":visible")) {
+            el.fadeOut('slow', function() { requestTags(); setContents(); el.fadeIn('slow') });
+        }
+        else {
+            setContents();
+            requestTags();
+            el.show('slow');
+        }
+    }
+
+    function onReceivedPin(data) {
+        currentPin = data;
+        displayCurrentPin();
+    }
+
+    function onReceivedTags(data) {
+        $('#pinTags').importTags(data);
+    }
+
+    function requestTags() {
+        if (currentPin == null) {
+            $('#pinTags').importTags('');
+            return;
+        }
+
+        $.ajax({
+        type: 'GET',
+        url: '/pin/' + currentPin.id + '/tags',
+        contentType: "application/json; charset=utf-8",
+        success: onReceivedTags
+        });
+    }
+
+    function setRedeemedThenGrab(redeemed) {
+        redeemedPins = redeemed;
+        newGrab();
+    }
+
+    function newGrab() {
+        $.ajax({
+        type: 'POST',
+        url: '/grab',
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify({ "tags": $('#searchTags').val(), "redeemed": redeemedPins }),
+        success: onReceivedPin
+        });
+    }
+
+    function warnOrSave() {
+        var redeemed = $('#pinRedeemed').is(':checked');
+
+        if (!redeemed) {
+            $('#continueAnyway').modal();
+        }
+        else {
+            savePin();
+        }
+    }
+
+    function savePin() {
+        if (currentPin == null) {
+            return;
+        }
+
+        var redeemed = $('#pinRedeemed').is(':checked');
+
+        $.ajax({
+        type: 'POST',
+        url: '/update',
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify({ "pinId": currentPin.id, "note": $('#note').val(), "tags": $('#pinTags').val(), "redeemed": redeemed }),
+        success: nextPin
+        });
+    }
+
+    function nextPin() {
+        console.log('next pin');
+        $.ajax({
+        type: 'POST',
+        url: '/grab',
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify({ "tags": $('#searchTags').val(), "redeemed": redeemedPins, "lastId": currentPin.id }),
+        success: onReceivedPin
+        });
+    }
+
     $(document).ready(function() {
-        $('#tags').tagsInput({ autocomplete_url: 'tags', width: '100%', height: '20px', defaultText: 'Enter tags' });
+        $('#searchTags').tagsInput({ autocomplete_url: 'tags', width: '100%', height: '20px', defaultText: 'Enter tags', onChange: newGrab });
+        $('#pinTags').tagsInput({ autocomplete_url: 'tags', width: '100%', height: '20px', defaultText: 'Enter tags' });
+        $('#unredeemedButton').button('toggle');
     });
 
     function selectText(containerid) {

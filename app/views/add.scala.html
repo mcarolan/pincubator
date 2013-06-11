@@ -1,4 +1,4 @@
-@main("The Pincubator -> Add Pins") {
+@main("The Pincubator -> Add Pins", "add") {
 
 <h1>New pins? Boom, I'll look after them</h1>
 
@@ -22,7 +22,7 @@
                 <textarea rows="3" id="note" placeholder="Enter a note to be displayed with these pins" style="width: 100%"></textarea>
             </div>
         </div>
-        <button type="button" id="addButton" onclick="postData()" class="btn">Add pins</button>
+        <button type="button" id="addButton" onclick="postData()" class="btn btn-primary">Add pins</button>
 
         <div class="alert alert-success" id="successMessage" style="display: none">
             Ace, I've remembered those pins!

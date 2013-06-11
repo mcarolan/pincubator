@@ -5,9 +5,12 @@
 # Home page
 GET     /                           controllers.Application.index
 GET     /add                        controllers.Application.add
-GET     /grab                       controllers.Application.grab
-GET     /tags                       controllers.TagController.getTags
+GET      /grab                      controllers.Application.grab
+POST     /grab                       controllers.PinController.grab
+GET     /tags                       controllers.TagController.getAllTags
+GET     /pin/:id/tags               controllers.TagController.getTagsForPin(id: Int)
 POST    /save                       controllers.PinController.save
+POST    /update                     controllers.PinController.update
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
