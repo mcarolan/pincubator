@@ -66,6 +66,7 @@
 <script>
     var currentPin = null;
     var redeemedPins = false;
+    var ignoreOnChange = false;
 
     function displayCurrentPin() {
         var el = $('#currentPin');
@@ -121,11 +122,18 @@
     }
 
     function newGrab() {
+        if (ignoreOnChange) {
+            return;
+        }
+
+        var tags = $('#searchTags').val();
+        window.location.hash = '#' + tags;
+
         $.ajax({
         type: 'POST',
         url: '/grab',
         contentType: "application/json; charset=utf-8",
-        data: JSON.stringify({ "tags": $('#searchTags').val(), "redeemed": redeemedPins }),
+        data: JSON.stringify({ "tags": tags, "redeemed": redeemedPins }),
         success: onReceivedPin
         });
     }
@@ -172,6 +180,13 @@
         $('#searchTags').tagsInput({ autocomplete_url: 'tags', width: '100%', height: '20px', defaultText: 'Enter tags', onChange: newGrab });
         $('#pinTags').tagsInput({ autocomplete_url: 'tags', width: '100%', height: '20px', defaultText: 'Enter tags' });
         $('#unredeemedButton').button('toggle');
+
+        if (window.location.hash.length > 0) {
+            ignoreOnChange = true;
+            $('#searchTags').importTags(window.location.hash.substring(1));
+            ignoreOnChange = false;
+            newGrab();
+        }
     });
 
     function selectText(containerid) {
